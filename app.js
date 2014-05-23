@@ -10,6 +10,9 @@ var http = require('http'),
     Filter = filterClasses.Filter,
     fs = require('fs');
 
+// 1px transparent GIF from http://upload.wikimedia.org/wikipedia/commons/c/ce/Transparent.gif
+var transparentImage = '\x47\x49\x46\x38\x39\x61\x01\x00\x01\x00\x80\x00\x00\x00\x00\x00\xFF\xFF\xFF\x21\xF9\x04\x01\x00\x00\x00\x00\x2C\x00\x00\x00\x00\x01\x00\x01\x00\x00\x02\x01\x44\x00\x3B';
+
 var list;
 
 function contentTypeFromRequest(req) {
@@ -31,7 +34,7 @@ function contentTypeFromRequest(req) {
             return "XMLHTTPREQUEST";
         }
 
-        var url = req.url.toLowerCase();
+        var url = new URI(req.url).path().toLowerCase();
 
         if (/\.js$/.test(url)) {
             return "SCRIPT";
@@ -56,8 +59,8 @@ https.get({
 
     function (res) {
         res.on('data', function (chunk) {
-            console.log('Received ' + chunk.length + ' bytes');
             list += chunk;
+            console.log('Received ' + list.length / 1024 + ' KB');
         });
         res.on('end', function () {
             startFiltering();
@@ -97,8 +100,16 @@ function startFiltering() {
 
         if (matched instanceof filterClasses.BlockingFilter) {
             console.log('Filtered: ' + req.url);
-            res.writeHead(403);
-            res.end('Blocked by ABP-Proxy. Filter: ' + matched.text);
+
+            if (contentType == 'IMAGE') {
+                // Fake a transparent image response
+                console.log('Transparent image sent: ' + req.url);
+                res.writeHead(200);
+                res.end(transparentImage);
+            } else {
+                res.writeHead(403);
+                res.end('Blocked by ABP-Proxy. Filter: ' + matched.text);
+            }
         } else {
             delete req.headers['proxy-connection'];
             proxy.web(req, res, { target: req.url, xfwd: false, toProxy: false });

@@ -1,0 +1,13 @@
+{
+  "name": "abp-proxy",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "start": "node ./app"
+  },
+  "dependencies": {
+      "underscore": ">=1.6.0",
+      "http-proxy": ">=1.1.4",
+      "URIjs": ">=1.13.1"
+  }
+}
